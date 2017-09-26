@@ -1,9 +1,7 @@
 const models = require('./models');
 const config = require('./config/config.json');
 
-const newUser = new models.User('newUser');
-const newProduct = new models.Product('newProduct');
+const Importer = require('./utils/importer');
 
-console.log('App name is', config.name);
-newUser.sayHi();
-newProduct.sayHi();
+const importer = new Importer();
+importer.init();
