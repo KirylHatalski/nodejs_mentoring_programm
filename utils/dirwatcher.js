@@ -2,9 +2,9 @@ const EventEmitter = require('events');
 const fs = require('fs');
 
 class DirWatcher extends EventEmitter {
-    constructor() {
+    constructor(path) {
         super();
-        this.dirContent = null;
+        this.dirContent = fs.readdirSync(path);
     }
 
     dirReader(path) {
