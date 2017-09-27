@@ -3,35 +3,65 @@ const fs = require('fs');
 
 
 class Importer {
-    constructor(){
+    constructor() {
         this.watcher = new DirWatcher('./data');
-        this.files = {};
+        this.files = [];
     }
 
-    importFIles(){
-      this.watcher.dirContent.forEach((elem, index) => {
-        fs.readFile(`./data/${elem}`, 'utf-8', (err, file) => {
-          if(err) return console.log(err);
-          this.files[index] = file;
+    importFiles() {
+        return new Promise((res, rej) => {
+            this.watcher.dirContent.forEach(elem => {
+                fs.readFile(`./data/${elem}`, 'utf-8', (err, file) => {
+                    if (err) return rej(err);
+                    this.files.push({[elem]: this.parseCSVtoJSON(file)});
+                    if(this.files.length === this.watcher.dirContent.length) {
+                        res(this.getFiles());
+                    }
+                });
+            });
         });
-      });
     }
 
-    importFIlesSync(){
-      this.watcher.dirContent.forEach((elem, index) => {
-        this.files[index] = fs.readFileSync(`./data/${elem}`, 'utf-8');
-      });
+    importFilesSync() {
+        this.watcher.dirContent.forEach(elem => {
+            this.files[elem] = this.parseCSVtoJSON(fs.readFileSync(`./data/${elem}`, 'utf-8'));
+        });
+    }
+
+    parseCSVtoJSON(csv) {
+        let unbornJSON = [],
+            lines = csv.split('\n'),
+            headers = lines[0].split(','),
+            cell = {};
+
+        lines.forEach((line, index) => {
+            if(index == 0) {
+                return
+            }
+            let newField = line.split(',');
+            newField.forEach((field, index) => {
+                    cell[headers[index]] = field;
+                });
+            unbornJSON.push(cell);
+            cell = {};
+        });
+
+        return unbornJSON;
     }
 
     getFiles() {
-      return this.files;
+        return JSON.stringify(this.files);
     }
 
-    init(){
+    init() {
+        this.importFiles();
         this.watcher.watch('./data', 1000);
         this.watcher.on('dirwatcher:changed', () => {
-          this.importFIlesSync();
-        })
+            this.files = [];
+            this.importFiles().then(data => console.log(data));
+            // this.importFilesSync();
+            // console.log(this.getFiles());
+        });
     }
 }
 
